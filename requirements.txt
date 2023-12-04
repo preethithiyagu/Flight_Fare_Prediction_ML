@@ -1,3 +1,4 @@
+altair==5.2.0
 arcade==2.6.17
 asgiref==3.7.2
 attrs==23.1.0
@@ -22,3 +23,4 @@ schedule==1.2.0
 secure-smtplib==0.1.1
 sqlparse==0.4.4
 typing_extensions==4.8.0
+tzdata==2023.3
