@@ -101,6 +101,6 @@ if depart_place and arrival_place:  # Check if both depart_place and arrival_pla
         total_price = base_predicted_fare * num_persons * (1 + increase_percentage)
         Airline = stops_info['Airline'].values[0]  # Assuming 'Flight_Name' is the column containing flight names
         
-        st.button("Reset", type="primary")
+        st.button("Reset")
     if st.button('Predict'):
         st.write(f"The predicted fare for {num_persons} persons on {Airline} from {depart_place} to {arrival_place} on {depart_date} with {num_stops} is: Rs. {total_price}")
