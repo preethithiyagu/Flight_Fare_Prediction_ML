@@ -1,9 +1,11 @@
 import pandas as pd
+import streamlit as st
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.preprocessing import OneHotEncoder
 import re
+import datetime
 
 # Load dataset
 data = pd.read_csv("a1_FlightFare_Dataset.csv")
@@ -12,15 +14,24 @@ def validate_date_format(date_string):
     pattern = re.compile(r'^\d{4}-\d{2}-\d{2}$')
     return bool(pattern.match(date_string))
 
-# User inputs
-depart_date = input("Enter departure date (YYYY-MM-DD): ")
-depart_place = input("Enter departure place: ")
-arrival_place = input("Enter arrival place: ")
-num_persons = int(input("Enter number of persons: "))
+def set_background():
+    st.set_page_config(
+        page_title="Flight Fare Prediction",
+        page_icon="🛫",
+    )
 
-while not validate_date_format(depart_date):
-    print("Invalid date format! Please use the format 'YYYY-MM-DD'.")
-    depart_date = input("Enter departure date (YYYY-MM-DD): ")
+set_background()
+
+st.title("Flight Fare Prediction App")
+
+#User Input
+depart_date = st.text_input("Enter departure date (YYYY-MM-DD): ")
+if depart_date:  # Check if depart_date is not empty
+    if not validate_date_format(depart_date):
+        st.write("Invalid date format! Please use the format 'YYYY-MM-DD'.")
+depart_place = st.text_input("Enter departure place: ")
+arrival_place = st.text_input("Enter arrival place: ")
+num_persons = st.number_input("Enter number of persons:", min_value=1, step=1)
     
 # Feature selection for demonstration
 selected_features = ['Date_of_Journey', 'Source', 'Destination', 'Price']
@@ -39,12 +50,17 @@ encoded_cols.columns = encoder.get_feature_names_out(['Source', 'Destination']) 
 model_data = pd.concat([model_data, encoded_cols], axis=1).drop(['Source', 'Destination'], axis=1)
 
 # Check available sources and destinations
-available_sources = set(model_data.columns[model_data.columns.str.startswith('Source_')])
-available_destinations = set(model_data.columns[model_data.columns.str.startswith('Destination_')])
+available_sources = set(data['Source'].unique())
+available_destinations = set(data['Destination'].unique())
 
-if (f'Source_{depart_place}' not in available_sources) or (f'Destination_{arrival_place}' not in available_destinations):
-    print("No flights available for the provided source and/or destination.")
-else:
+if depart_place and arrival_place:  # Check if both depart_place and arrival_place are filled
+    if (depart_place not in available_sources) or (arrival_place not in available_destinations):
+        st.write("No flights available for the provided source and/or destination.")
+    else:
+        direct_flight_check = len(data[(data['Source'] == depart_place) & (data['Destination'] == arrival_place)])
+        if direct_flight_check == 0:
+            st.write("No direct flights available for the specified route.")
+        
     X = model_data.drop('Price', axis=1)
     y = model_data['Price']
 
@@ -62,7 +78,7 @@ else:
         score = model.score(X_test, y_test)
         print(f"{name} - Test R2 Score: {score}")
 
-    selected_model = models['Gradient Boosting Regressor']
+    selected_model = models['Random Forest Regressor']
 
     stops_info = data[(data['Source'] == depart_place) & (data['Destination'] == arrival_place)]
     if not stops_info.empty:
@@ -84,8 +100,7 @@ else:
         increase_percentage = 0.1
         total_price = base_predicted_fare * num_persons * (1 + increase_percentage)
         Airline = stops_info['Airline'].values[0]  # Assuming 'Flight_Name' is the column containing flight names
-
-        print(f"The predicted fare for {num_persons} persons on {Airline} from {depart_place} to {arrival_place} on {depart_date} with {num_stops} is: Rs. {total_price}")
         
-    else:
-        print("No direct flights available for the specified route.")      
+        st.button("Reset", type="primary")
+    if st.button('Predict'):
+        st.write(f"The predicted fare for {num_persons} persons on {Airline} from {depart_place} to {arrival_place} on {depart_date} with {num_stops} is: Rs. {total_price}")
