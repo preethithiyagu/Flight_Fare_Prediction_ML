@@ -102,10 +102,10 @@ if depart_place and arrival_place:  # Check if both depart_place and arrival_pla
         Airline = stops_info['Airline'].values[0]  # Assuming 'Airline' is the column containing airline names
         
         if st.button('Reset'):
-           depart_date = ''
-           depart_place = ''
-           arrival_place = ''
-           num_persons = 1
-            pass
+            depart_date = ''
+            depart_place = ''
+            arrival_place = ''
+            num_persons = 1
+
     if st.button('Predict'):
-        st.write(f"The predicted fare for {num_persons} persons on {Airline} from {depart_place} to {arrival_place} on {depart_date} with {num_stops} stop(s) is: Rs. {total_price}") 
+        st.write(f"The predicted fare for {num_persons} persons on {Airline} from {depart_place} to {arrival_place} on {depart_date} with {num_stops} stop(s) is: Rs. {total_price}")
