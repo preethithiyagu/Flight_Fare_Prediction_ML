@@ -91,10 +91,10 @@ if depart_place and arrival_place:  # Check if both depart_place and arrival_pla
     }
 
     for name, model in models.items():
-        st.write(f"Training {name}...")
+        print(f"Training {name}...")
         model.fit(X_train, y_train)
         score = model.score(X_test, y_test)
-        st.write(f"{name} - Test R2 Score: {score}")
+        print(f"{name} - Test R2 Score: {score}")
 
     selected_model = models['Random Forest Regressor']
 
