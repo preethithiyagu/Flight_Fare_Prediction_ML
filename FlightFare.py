@@ -44,7 +44,7 @@ model_data['Day'] = model_data['Date_of_Journey'].dt.day
 model_data.drop(['Date_of_Journey'], axis=1, inplace=True)
 
 # Convert categorical variables into numerical representations
-encoder = OneHotEncoder(sparse=False)
+encoder = OneHotEncoder
 encoded_cols = encoder.fit_transform(model_data[['Source', 'Destination']])
 column_names = encoder.get_feature_names_out(['Source', 'Destination'])
 
