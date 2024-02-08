@@ -24,7 +24,7 @@ set_background()
 
 st.title("Flight Fare Prediction App")
 
-#User Input
+# User Input
 depart_date = st.text_input("Enter departure date (YYYY-MM-DD): ")
 if depart_date:  # Check if depart_date is not empty
     if not validate_date_format(depart_date):
@@ -32,27 +32,21 @@ if depart_date:  # Check if depart_date is not empty
 depart_place = st.text_input("Enter departure place: ")
 arrival_place = st.text_input("Enter arrival place: ")
 num_persons = st.number_input("Enter number of persons:", min_value=1, step=1)
-    
+
 # Feature selection for demonstration
 selected_features = ['Date_of_Journey', 'Source', 'Destination', 'Price']
 model_data = data[selected_features].copy()
 
 model_data['Date_of_Journey'] = pd.to_datetime(model_data['Date_of_Journey'], format='%d/%m/%Y')
-model_data.loc[:, 'Year'] = model_data['Date_of_Journey'].dt.year
-model_data.loc[:, 'Month'] = model_data['Date_of_Journey'].dt.month
-model_data.loc[:, 'Day'] = model_data['Date_of_Journey'].dt.day
-model_data = model_data.drop(['Date_of_Journey'], axis=1).copy()
+model_data['Year'] = model_data['Date_of_Journey'].dt.year
+model_data['Month'] = model_data['Date_of_Journey'].dt.month
+model_data['Day'] = model_data['Date_of_Journey'].dt.day
+model_data.drop(['Date_of_Journey'], axis=1, inplace=True)
 
 # Convert categorical variables into numerical representations
-encoder = OneHotEncoder()
+encoder = OneHotEncoder(sparse=False)
 encoded_cols = encoder.fit_transform(model_data[['Source', 'Destination']])
 column_names = encoder.get_feature_names_out(['Source', 'Destination'])
-
-print("Shape of encoded_cols:", encoded_cols.shape)
-print("Length of column_names:", len(column_names))
-
-encoded_df = pd.DataFrame(encoded_cols, columns=column_names)
-model_data = pd.concat([model_data, encoded_df], axis=1).drop(['Source', 'Destination'], axis=1)
 
 # Check available sources and destinations
 available_sources = set(data['Source'].unique())
@@ -65,7 +59,7 @@ if depart_place and arrival_place:  # Check if both depart_place and arrival_pla
         direct_flight_check = len(data[(data['Source'] == depart_place) & (data['Destination'] == arrival_place)])
         if direct_flight_check == 0:
             st.write("No direct flights available for the specified route.")
-        
+
     X = model_data.drop('Price', axis=1)
     y = model_data['Price']
 
@@ -98,15 +92,13 @@ if depart_place and arrival_place:  # Check if both depart_place and arrival_pla
         })
 
         encoded_user_input = encoder.transform(user_input_df[['Source', 'Destination']])
-        encoded_user_df = pd.DataFrame(encoded_user_input, columns=column_names)
-        encoded_user_df = encoded_user_df.reindex(columns=model_data.drop('Price', axis=1).columns, fill_value=0)
-        user_input_df = pd.concat([user_input_df, encoded_user_df], axis=1).drop(['Source', 'Destination'], axis=1)
+        encoded_df = pd.DataFrame(encoded_user_input, columns=column_names)
 
-        base_predicted_fare = selected_model.predict(user_input_df)
+        base_predicted_fare = selected_model.predict(encoded_df)
         increase_percentage = 0.1
         total_price = base_predicted_fare * num_persons * (1 + increase_percentage)
         Airline = stops_info['Airline'].values[0]  # Assuming 'Airline' is the column containing airline names
-        
+
         if st.button('Reset'):
             depart_date = ''
             depart_place = ''
