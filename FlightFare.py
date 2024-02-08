@@ -45,9 +45,10 @@ model_data = model_data.drop(['Date_of_Journey'], axis=1).copy()
 
 # Convert categorical variables into numerical representations
 encoder = OneHotEncoder()
-encoded_cols = pd.DataFrame(encoder.fit_transform(model_data[['Source', 'Destination']]))
-encoded_cols.columns = encoder.get_feature_names_out(['Source', 'Destination'])
-model_data = pd.concat([model_data, encoded_cols], axis=1).drop(['Source', 'Destination'], axis=1)
+encoded_cols = encoder.fit_transform(model_data[['Source', 'Destination']])
+column_names = encoder.get_feature_names_out(['Source', 'Destination'])
+encoded_df = pd.DataFrame(encoded_cols, columns=column_names)
+model_data = pd.concat([model_data, encoded_df], axis=1).drop(['Source', 'Destination'], axis=1)
 
 # Check available sources and destinations
 available_sources = set(data['Source'].unique())
@@ -92,20 +93,12 @@ if depart_place and arrival_place:  # Check if both depart_place and arrival_pla
             'Destination': [arrival_place],
         })
 
-        encoded_user_input = pd.DataFrame(encoder.transform(user_input_df[['Source', 'Destination']]))
-        encoded_user_input.columns = encoder.get_feature_names_out(['Source', 'Destination'])
+        encoded_user_input = encoder.transform(user_input_df[['Source', 'Destination']])
+        encoded_user_df = pd.DataFrame(encoded_user_input, columns=column_names)
+        encoded_user_df = encoded_user_df.reindex(columns=model_data.drop('Price', axis=1).columns, fill_value=0)
+        user_input_df = pd.concat([user_input_df, encoded_user_df], axis=1).drop(['Source', 'Destination'], axis=1)
 
-        # Ensure columns are aligned with the features used during training
-        missing_features = set(X_train.columns) - set(encoded_user_input.columns)
-        for feature in missing_features:
-            encoded_user_input[feature] = 0
-
-        # Ensure data types are consistent
-        encoded_user_input = encoded_user_input[X_train.columns]  # Reorder columns to match X_train
-        encoded_user_input = encoded_user_input.astype(X_train.dtypes)
-
-        # Make predictions
-        base_predicted_fare = selected_model.predict(encoded_user_input)
+        base_predicted_fare = selected_model.predict(user_input_df)
         increase_percentage = 0.1
         total_price = base_predicted_fare * num_persons * (1 + increase_percentage)
         Airline = stops_info['Airline'].values[0]  # Assuming 'Airline' is the column containing airline names
