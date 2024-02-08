@@ -47,6 +47,10 @@ model_data = model_data.drop(['Date_of_Journey'], axis=1).copy()
 encoder = OneHotEncoder()
 encoded_cols = encoder.fit_transform(model_data[['Source', 'Destination']])
 column_names = encoder.get_feature_names_out(['Source', 'Destination'])
+
+print("Shape of encoded_cols:", encoded_cols.shape)
+print("Length of column_names:", len(column_names))
+
 encoded_df = pd.DataFrame(encoded_cols, columns=column_names)
 model_data = pd.concat([model_data, encoded_df], axis=1).drop(['Source', 'Destination'], axis=1)
 
