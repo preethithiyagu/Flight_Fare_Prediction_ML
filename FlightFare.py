@@ -24,7 +24,7 @@ set_background()
 
 st.title("Flight Fare Prediction App")
 
-# User Input
+#User Input
 depart_date = st.text_input("Enter departure date (YYYY-MM-DD): ")
 if depart_date:  # Check if depart_date is not empty
     if not validate_date_format(depart_date):
@@ -44,7 +44,7 @@ model_data.loc[:, 'Day'] = model_data['Date_of_Journey'].dt.day
 model_data = model_data.drop(['Date_of_Journey'], axis=1).copy()
 
 # Convert categorical variables into numerical representations
-encoder = OneHotEncoder(sparse=False)
+encoder = OneHotEncoder()
 encoded_cols = pd.DataFrame(encoder.fit_transform(model_data[['Source', 'Destination']]))
 encoded_cols.columns = encoder.get_feature_names_out(['Source', 'Destination'])
 model_data = pd.concat([model_data, encoded_cols], axis=1).drop(['Source', 'Destination'], axis=1)
