@@ -44,7 +44,7 @@ model_data.loc[:, 'Day'] = model_data['Date_of_Journey'].dt.day
 model_data = model_data.drop(['Date_of_Journey'], axis=1).copy()
 
 # Convert categorical variables into numerical representations
-encoder = OneHotEncoder(sparse=False)
+encoder = OneHotEncoder
 
 # Check for missing values in categorical columns
 if model_data[['Source', 'Destination']].isnull().any().any():
