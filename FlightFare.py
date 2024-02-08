@@ -23,7 +23,7 @@ set_background()
 
 st.title("Flight Fare Prediction App")
 
-#User Input
+# User Input
 depart_date = st.text_input("Enter departure date (YYYY-MM-DD): ")
 if depart_date:  # Check if depart_date is not empty
     if not validate_date_format(depart_date):
@@ -31,7 +31,7 @@ if depart_date:  # Check if depart_date is not empty
 depart_place = st.text_input("Enter departure place: ")
 arrival_place = st.text_input("Enter arrival place: ")
 num_persons = st.number_input("Enter number of persons:", min_value=1, step=1)
-    
+
 # Check available sources and destinations
 available_sources = set(data['Source'].unique())
 available_destinations = set(data['Destination'].unique())
@@ -78,8 +78,16 @@ if depart_place and arrival_place:  # Check if both depart_place and arrival_pla
         base_predicted_fare = selected_model.predict(user_input_df)
         increase_percentage = 0.1
         total_price = base_predicted_fare * num_persons * (1 + increase_percentage)
-        Airline = stops_info['Airline'].values[0]  # Assuming 'Flight_Name' is the column containing flight names
+        Airline = stops_info['Airline'].values[0]  # Assuming 'Airline' is the column containing airline names
         
-        st.button("Reset")
-    if st.button('Predict'):
-        st.write(f"The predicted fare for {num_persons} persons on {Airline} from {depart_place} to {arrival_place} on {depart_date} with {num_stops} is: Rs. {total_price}")
+        reset_button_clicked = st.button("Reset")
+        if reset_button_clicked:
+            # Reset the input fields
+            st.text_input("Enter departure date (YYYY-MM-DD): ", value="")
+            st.text_input("Enter departure place: ", value="")
+            st.text_input("Enter arrival place: ", value="")
+            st.number_input("Enter number of persons:", min_value=1, step=1, value=1)
+
+        predict_button_clicked = st.button('Predict')
+        if predict_button_clicked:
+            st.write(f"The predicted fare for {num_persons} persons on {Airline} from {depart_place} to {arrival_place} on {depart_date} with {num_stops} stop(s) is: Rs. {total_price}")
