@@ -24,7 +24,7 @@ set_background()
 
 st.title("Flight Fare Prediction App")
 
-#User Input
+# User Input
 depart_date = st.text_input("Enter departure date (YYYY-MM-DD): ")
 if depart_date:  # Check if depart_date is not empty
     if not validate_date_format(depart_date):
@@ -38,15 +38,14 @@ selected_features = ['Date_of_Journey', 'Source', 'Destination', 'Price']
 model_data = data[selected_features].copy()
 
 model_data['Date_of_Journey'] = pd.to_datetime(model_data['Date_of_Journey'], format='%d/%m/%Y')
-model_data.loc[:, 'Year'] = model_data['Date_of_Journey'].dt.year
-model_data.loc[:, 'Month'] = model_data['Date_of_Journey'].dt.month
-model_data.loc[:, 'Day'] = model_data['Date_of_Journey'].dt.day
-model_data = model_data.drop(['Date_of_Journey'], axis=1).copy()
+model_data['Year'] = model_data['Date_of_Journey'].dt.year
+model_data['Month'] = model_data['Date_of_Journey'].dt.month
+model_data['Day'] = model_data['Date_of_Journey'].dt.day
+model_data.drop('Date_of_Journey', axis=1, inplace=True)
 
 # Convert categorical variables into numerical representations
 encoder = OneHotEncoder(sparse=False)
-encoded_cols = pd.DataFrame(encoder.fit_transform(model_data[['Source', 'Destination']]))
-encoded_cols.columns = encoder.get_feature_names_out(['Source', 'Destination'])  # Updated line
+encoded_cols = pd.DataFrame(encoder.fit_transform(model_data[['Source', 'Destination']]), columns=encoder.get_feature_names_out(['Source', 'Destination']))
 model_data = pd.concat([model_data, encoded_cols], axis=1).drop(['Source', 'Destination'], axis=1)
 
 # Check available sources and destinations
@@ -73,10 +72,10 @@ if depart_place and arrival_place:  # Check if both depart_place and arrival_pla
     }
 
     for name, model in models.items():
-        print(f"Training {name}...")
+        st.write(f"Training {name}...")
         model.fit(X_train, y_train)
         score = model.score(X_test, y_test)
-        print(f"{name} - Test R2 Score: {score}")
+        st.write(f"{name} - Test R2 Score: {score}")
 
     selected_model = models['Random Forest Regressor']
 
@@ -92,8 +91,7 @@ if depart_place and arrival_place:  # Check if both depart_place and arrival_pla
             'Destination': [arrival_place],
         })
 
-        encoded_user_input = pd.DataFrame(encoder.transform(user_input_df[['Source', 'Destination']]))
-        encoded_user_input.columns = encoder.get_feature_names_out(['Source', 'Destination'])  # Updated line
+        encoded_user_input = pd.DataFrame(encoder.transform(user_input_df[['Source', 'Destination']]), columns=encoder.get_feature_names_out(['Source', 'Destination']))
         user_input_df = pd.concat([user_input_df, encoded_user_input], axis=1).drop(['Source', 'Destination'], axis=1)
 
         base_predicted_fare = selected_model.predict(user_input_df)
@@ -101,6 +99,11 @@ if depart_place and arrival_place:  # Check if both depart_place and arrival_pla
         total_price = base_predicted_fare * num_persons * (1 + increase_percentage)
         Airline = stops_info['Airline'].values[0]  # Assuming 'Flight_Name' is the column containing flight names
         
-        st.button("Reset")
-    if st.button('Predict'):
-        st.write(f"The predicted fare for {num_persons} persons on {Airline} from {depart_place} to {arrival_place} on {depart_date} with {num_stops} is: Rs. {total_price}")
+        reset_button_clicked = st.button("Reset")
+        if reset_button_clicked:
+            st.experimental_rerun()
+
+        predict_button_clicked = st.button('Predict')
+        if predict_button_clicked:
+            st.write(f"The predicted fare for {num_persons} persons on {Airline} from {depart_place} to {arrival_place} on {depart_date} with {num_stops} is: Rs. {total_price}")
+
