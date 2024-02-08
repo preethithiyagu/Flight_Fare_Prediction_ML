@@ -3,15 +3,10 @@ import streamlit as st
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-import re
 import datetime
 
 # Load dataset
 data = pd.read_csv("a1_FlightFare_Dataset.csv")
-
-def validate_date_format(date_string):
-    pattern = re.compile(r'^\d{4}-\d{2}-\d{2}$')
-    return bool(pattern.match(date_string))
 
 def set_background():
     st.set_page_config(
@@ -23,15 +18,17 @@ set_background()
 
 st.title("Flight Fare Prediction App")
 
-# User Input
+#User Input
 depart_date = st.text_input("Enter departure date (YYYY-MM-DD): ")
 if depart_date:  # Check if depart_date is not empty
-    if not validate_date_format(depart_date):
+    try:
+        depart_date = pd.to_datetime(depart_date)
+    except ValueError:
         st.write("Invalid date format! Please use the format 'YYYY-MM-DD'.")
 depart_place = st.text_input("Enter departure place: ")
 arrival_place = st.text_input("Enter arrival place: ")
 num_persons = st.number_input("Enter number of persons:", min_value=1, step=1)
-
+    
 # Check available sources and destinations
 available_sources = set(data['Source'].unique())
 available_destinations = set(data['Destination'].unique())
@@ -68,9 +65,9 @@ if depart_place and arrival_place:  # Check if both depart_place and arrival_pla
         num_stops = stops_info['Total_Stops'].values[0]
 
         user_input_df = pd.DataFrame({
-            'Year': [pd.to_datetime(depart_date).year],
-            'Month': [pd.to_datetime(depart_date).month],
-            'Day': [pd.to_datetime(depart_date).day],
+            'Year': [depart_date.year],
+            'Month': [depart_date.month],
+            'Day': [depart_date.day],
             'Source': [depart_place],
             'Destination': [arrival_place],
         })
@@ -80,14 +77,6 @@ if depart_place and arrival_place:  # Check if both depart_place and arrival_pla
         total_price = base_predicted_fare * num_persons * (1 + increase_percentage)
         Airline = stops_info['Airline'].values[0]  # Assuming 'Airline' is the column containing airline names
         
-        reset_button_clicked = st.button("Reset")
-        if reset_button_clicked:
-            # Reset the input fields
-            st.text_input("Enter departure date (YYYY-MM-DD): ", value="")
-            st.text_input("Enter departure place: ", value="")
-            st.text_input("Enter arrival place: ", value="")
-            st.number_input("Enter number of persons:", min_value=1, step=1, value=1)
-
-        predict_button_clicked = st.button('Predict')
-        if predict_button_clicked:
-            st.write(f"The predicted fare for {num_persons} persons on {Airline} from {depart_place} to {arrival_place} on {depart_date} with {num_stops} stop(s) is: Rs. {total_price}")
+        st.button("Reset")
+    if st.button('Predict'):
+        st.write(f"The predicted fare for {num_persons} persons on {Airline} from {depart_place} to {arrival_place} on {depart_date} with {num_stops} is: Rs. {total_price}")
