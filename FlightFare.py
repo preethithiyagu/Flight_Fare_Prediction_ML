@@ -3,7 +3,7 @@ import streamlit as st
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import LabelEncoder
 import re
 import datetime
 
@@ -43,11 +43,10 @@ model_data.loc[:, 'Month'] = model_data['Date_of_Journey'].dt.month
 model_data.loc[:, 'Day'] = model_data['Date_of_Journey'].dt.day
 model_data = model_data.drop(['Date_of_Journey'], axis=1).copy()
 
-# Convert categorical variables into numerical representations
-encoder = OneHotEncoder(sparse=False)
-encoded_cols = pd.DataFrame(encoder.fit_transform(model_data[['Source', 'Destination']]))
-encoded_cols.columns = encoder.get_feature_names_out(['Source', 'Destination'])  # Updated line
-model_data = pd.concat([model_data, encoded_cols], axis=1).drop(['Source', 'Destination'], axis=1)
+# Convert categorical variables into numerical representations using label encoding
+label_encoder = LabelEncoder()
+model_data['Source'] = label_encoder.fit_transform(model_data['Source'])
+model_data['Destination'] = label_encoder.fit_transform(model_data['Destination'])
 
 # Check available sources and destinations
 available_sources = set(data['Source'].unique())
@@ -91,10 +90,6 @@ if depart_place and arrival_place:  # Check if both depart_place and arrival_pla
             'Source': [depart_place],
             'Destination': [arrival_place],
         })
-
-        encoded_user_input = pd.DataFrame(encoder.transform(user_input_df[['Source', 'Destination']]))
-        encoded_user_input.columns = encoder.get_feature_names_out(['Source', 'Destination'])  # Updated line
-        user_input_df = pd.concat([user_input_df, encoded_user_input], axis=1).drop(['Source', 'Destination'], axis=1)
 
         base_predicted_fare = selected_model.predict(user_input_df)
         increase_percentage = 0.1
