@@ -106,9 +106,6 @@ if depart_place and arrival_place and num_persons >= 1:
             user_encoded_df = pd.DataFrame(user_encoded.toarray(), columns=encoder.get_feature_names_out(['Source', 'Destination']))
             user_input_final = pd.concat([user_input_df.drop(['Source', 'Destination'], axis=1), user_encoded_df], axis=1)
 
-            # Align user input with training features
-            user_input_final = user_input_final.reindex(columns=X.columns, fill_value=0)
-
             # Predict
             base_price = selected_model.predict(user_input_final)[0]
             increase_percentage = 0.1  # Increase for assumed stops/services
