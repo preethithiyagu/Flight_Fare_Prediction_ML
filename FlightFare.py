@@ -5,7 +5,6 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.preprocessing import OneHotEncoder
 import re
-import datetime
 
 # Load dataset
 data = pd.read_csv("a1_FlightFare_Dataset.csv")
@@ -21,103 +20,96 @@ def set_background():
     )
 
 set_background()
-
 st.title("Flight Fare Prediction App")
 
-# User Input
-depart_date = st.text_input("Enter departure date (YYYY-MM-DD): ")
-if depart_date:  # Check if depart_date is not empty
-    if not validate_date_format(depart_date):
-        st.write("Invalid date format! Please use the format 'YYYY-MM-DD'.")
+# --- Initialize session state variables ---
+if 'depart_date' not in st.session_state:
+    st.session_state.depart_date = ''
 
-depart_place = st.text_input("Enter departure place: ")
-arrival_place = st.text_input("Enter arrival place: ")
-num_persons = st.number_input("Enter number of persons:", min_value=1, step=1)
+if 'depart_place' not in st.session_state:
+    st.session_state.depart_place = ''
 
-# Feature selection for demonstration
+if 'arrival_place' not in st.session_state:
+    st.session_state.arrival_place = ''
+
+if 'num_persons' not in st.session_state:
+    st.session_state.num_persons = 1
+
+# --- User Inputs with session state ---
+depart_date = st.text_input("Enter departure date (YYYY-MM-DD): ", value=st.session_state.depart_date)
+depart_place = st.text_input("Enter departure place: ", value=st.session_state.depart_place)
+arrival_place = st.text_input("Enter arrival place: ", value=st.session_state.arrival_place)
+num_persons = st.number_input("Enter number of persons:", min_value=1, step=1, value=st.session_state.num_persons)
+
+# Update session state after inputs (keeps values persistent)
+st.session_state.depart_date = depart_date
+st.session_state.depart_place = depart_place
+st.session_state.arrival_place = arrival_place
+st.session_state.num_persons = num_persons
+
+# Validate date format
+if depart_date and not validate_date_format(depart_date):
+    st.error("Invalid date format! Please use the format 'YYYY-MM-DD'.")
+
+# Prepare data for model
 selected_features = ['Date_of_Journey', 'Source', 'Destination', 'Price']
 model_data = data[selected_features].copy()
 
-# Convert Date_of_Journey to datetime
 model_data['Date_of_Journey'] = pd.to_datetime(model_data['Date_of_Journey'], format='%d/%m/%Y')
 model_data['Year'] = model_data['Date_of_Journey'].dt.year
 model_data['Month'] = model_data['Date_of_Journey'].dt.month
 model_data['Day'] = model_data['Date_of_Journey'].dt.day
 model_data = model_data.drop(['Date_of_Journey'], axis=1)
 
-# Convert categorical variables into numerical representations
-encoder = OneHotEncoder(handle_unknown='ignore')
+encoder = OneHotEncoder()
 
-# Check for missing values in categorical columns
 if model_data[['Source', 'Destination']].isnull().any().any():
-    st.write("Error: Missing values found in categorical columns. Please handle missing values first.")
+    st.error("Missing values found in categorical columns. Please handle missing values first.")
 else:
     try:
         encoded_cols = encoder.fit_transform(model_data[['Source', 'Destination']])
         column_names = encoder.get_feature_names_out(['Source', 'Destination'])
-
-        if not set(['Source', 'Destination']).issubset(model_data.columns):
-            st.write("Error: Columns 'Source' and 'Destination' not found in the DataFrame.")
-        else:
-            model_data_encoded = pd.DataFrame(encoded_cols.toarray(), columns=column_names)
-
-            # Concatenate encoded columns with original DataFrame
-            model_data_encoded = pd.concat([model_data.drop(['Source', 'Destination'], axis=1).reset_index(drop=True),
-                                            model_data_encoded.reset_index(drop=True)], axis=1)
+        model_data_encoded = pd.DataFrame(encoded_cols.toarray(), columns=column_names)
+        model_data_encoded = pd.concat([model_data.drop(['Source', 'Destination'], axis=1), model_data_encoded], axis=1)
     except ValueError as e:
-        st.write(f"Error: {e}")
+        st.error(f"Error encoding categorical features: {e}")
 
-# Check available sources and destinations
+# Available sources and destinations
 available_sources = set(data['Source'].unique())
 available_destinations = set(data['Destination'].unique())
 
-if depart_place and arrival_place:
-    if (depart_place not in available_sources) or (arrival_place not in available_destinations):
-        st.write("No flights available for the provided source and/or destination.")
+# Prediction logic
+if depart_date and depart_place and arrival_place and num_persons >= 1:
+
+    if depart_place not in available_sources or arrival_place not in available_destinations:
+        st.warning("No flights available for the provided source and/or destination.")
     else:
         direct_flight_check = len(data[(data['Source'] == depart_place) & (data['Destination'] == arrival_place)])
         if direct_flight_check == 0:
-            st.write("No direct flights available for the specified route.")
+            st.warning("No direct flights available for the specified route.")
 
-# Prepare data for training
-X = model_data_encoded.drop('Price', axis=1)
-y = model_data['Price']
+        X = model_data_encoded.drop('Price', axis=1)
+        y = model_data['Price']
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-models = {
-    'Linear Regression': LinearRegression(),
-    'Random Forest Regressor': RandomForestRegressor(random_state=42),
-    'Gradient Boosting Regressor': GradientBoostingRegressor(random_state=42)
-}
+        models = {
+            'Linear Regression': LinearRegression(),
+            'Random Forest Regressor': RandomForestRegressor(random_state=42),
+            'Gradient Boosting Regressor': GradientBoostingRegressor(random_state=42)
+        }
 
-for name, model in models.items():
-    model.fit(X_train, y_train)
-    score = model.score(X_test, y_test)
-    # Optional: Display training scores in Streamlit or console
-    # st.write(f"{name} - Test R2 Score: {score:.4f}")
+        for name, model in models.items():
+            model.fit(X_train, y_train)
 
-selected_model = models['Random Forest Regressor']
+        selected_model = models['Random Forest Regressor']
 
-# Prediction logic when user clicks Predict
-if st.button('Predict'):
-    # Validate inputs
-    if not depart_date or not validate_date_format(depart_date):
-        st.write("Please enter a valid departure date in YYYY-MM-DD format.")
-    elif not depart_place or not arrival_place:
-        st.write("Please enter both departure and arrival places.")
-    elif num_persons < 1:
-        st.write("Number of persons must be at least 1.")
-    else:
         stops_info = data[(data['Source'] == depart_place) & (data['Destination'] == arrival_place)]
-
-        if stops_info.empty:
-            st.write("No flights found for the selected route.")
-        else:
+        if not stops_info.empty:
             num_stops = stops_info['Total_Stops'].values[0]
             Airline = stops_info['Airline'].values[0]
 
-            # Prepare input for prediction
+            # Prepare user input for prediction
             user_input_df = pd.DataFrame({
                 'Year': [pd.to_datetime(depart_date).year],
                 'Month': [pd.to_datetime(depart_date).month],
@@ -128,22 +120,22 @@ if st.button('Predict'):
 
             encoded_user_input = pd.DataFrame(encoder.transform(user_input_df[['Source', 'Destination']]).toarray())
             encoded_user_input.columns = encoder.get_feature_names_out(['Source', 'Destination'])
-            user_input_df = pd.concat([user_input_df.reset_index(drop=True), encoded_user_input.reset_index(drop=True)], axis=1)
-            user_input_df = user_input_df.drop(['Source', 'Destination'], axis=1)
+            user_input_df = pd.concat([user_input_df.drop(['Source', 'Destination'], axis=1), encoded_user_input], axis=1)
 
-            base_predicted_fare = selected_model.predict(user_input_df)
-            increase_percentage = 0.1
-            total_price = base_predicted_fare[0] * num_persons * (1 + increase_percentage)
+            base_predicted_fare = selected_model.predict(user_input_df)[0]
+            increase_percentage = 0.1  # Example increase for stops, etc.
+            total_price = base_predicted_fare * num_persons * (1 + increase_percentage)
 
-            st.write(f"The predicted fare for {num_persons} persons on {Airline} from {depart_place} to {arrival_place} "
-                     f"on {depart_date} with {num_stops} stop(s) is: Rs. {total_price:.2f}")
+            if st.button('Predict'):
+                st.success(
+                    f"The predicted fare for {num_persons} person(s) on {Airline} from {depart_place} to {arrival_place} "
+                    f"on {depart_date} with {num_stops} stop(s) is: Rs. {total_price:.2f}"
+                )
 
-# Reset button
+# Reset button outside prediction block
 if st.button('Reset'):
-    # Reset input variables here (use session_state for persistence)
     st.session_state.depart_date = ''
     st.session_state.depart_place = ''
     st.session_state.arrival_place = ''
     st.session_state.num_persons = 1
-    st.experimental_rerun()  # This is safe here because it's inside button callback
-
+    st.experimental_rerun()
