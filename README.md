@@ -1,3 +1,3 @@
 # Flight_Fare_Prediction_ML
 
-https://flightfarepy-awiduwmwrev3fp536rdfz6.streamlit.app/
+https://flightfarepredictionml-v9xdgspayofmvcn5wrhkca.streamlit.app/
