@@ -138,10 +138,12 @@ if st.button('Predict'):
             st.write(f"The predicted fare for {num_persons} persons on {Airline} from {depart_place} to {arrival_place} "
                      f"on {depart_date} with {num_stops} stop(s) is: Rs. {total_price:.2f}")
 
-# Optional Reset button
+# Reset button
 if st.button('Reset'):
-    depart_date = ''
-    depart_place = ''
-    arrival_place = ''
-    num_persons = 1
-    st.experimental_rerun()
+    # Reset input variables here (use session_state for persistence)
+    st.session_state.depart_date = ''
+    st.session_state.depart_place = ''
+    st.session_state.arrival_place = ''
+    st.session_state.num_persons = 1
+    st.experimental_rerun()  # This is safe here because it's inside button callback
+
